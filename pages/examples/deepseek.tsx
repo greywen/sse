@@ -20,7 +20,7 @@ const initMsg: Message = {
 
 let abortController: AbortController | null = null;
 
-export default function SSE() {
+export default function Deepseek() {
   const [message, setMessage] = useState<{
     content: string;
     image: string;
@@ -39,7 +39,7 @@ export default function SSE() {
       abortController = new AbortController();
       setMessage(initMsg);
       setIsSending(true);
-      const response = await fetch('/api/sse', {
+      const response = await fetch('/api/deepseek', {
         signal: abortController.signal,
         method: 'POST',
         headers: {
@@ -56,15 +56,11 @@ export default function SSE() {
         throw '读取流报错';
       }
 
-      // 初始化一个缓冲区，用于存储未处理的流数据
       let buffer = '';
-      // 创建一个 TextDecoder，用于将流数据解码为字符串
       const decoder = new TextDecoder();
 
       while (true) {
-        // 从流中读取下一个块（chunk）
         const { value, done } = await reader.read();
-        // 如果流读取完成（done 为 true），退出循环
         if (done) {
           break;
         }
@@ -73,9 +69,7 @@ export default function SSE() {
           const chunk = decoder.decode(value, { stream: true });
           buffer += chunk;
 
-          // 按照双换行符（\n\n）将缓冲区拆分为多行
           let lines = buffer.split('\n\n');
-          // 将最后一行（可能是不完整的行）存回缓冲区，等待下一次读取补全
           buffer = lines.pop() || '';
 
           for (const line of lines) {
@@ -156,24 +150,6 @@ export default function SSE() {
       </div>
       <div className='absolute left-1/2 bottom-2 -translate-x-1/2'>
         <div className='flex gap-6 items-center cursor-pointer select-none'>
-          <p
-            className='flex gap-1'
-            onClick={() => {
-              setReqBody({ ...reqBody, showSSEError: !reqBody.showSSEError });
-            }}
-          >
-            <input type='checkbox' checked={reqBody.showSSEError} />
-            模拟SSE报错
-          </p>
-          <p
-            className='flex gap-1'
-            onClick={() => {
-              setReqBody({ ...reqBody, showHTTPError: !reqBody.showHTTPError });
-            }}
-          >
-            <input type='checkbox' checked={reqBody.showHTTPError} />
-            模拟HTTP请求报错
-          </p>
           {isSending ? (
             <button
               type='button'

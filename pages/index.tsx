@@ -6,8 +6,8 @@ export default function Home() {
       <Link key='sse' href='/examples/sse'>
         SSE
       </Link>
-      <Link key='ollama' href='/examples/ollama'>
-        Ollama
+      <Link key='deepseek' href='/examples/deepseek'>
+        Deepseek
       </Link>
     </div>
   );

@@ -10,7 +10,7 @@
 
 ## 浅入浅出
 
-[展示视频]()
+[展示视频](https://raw.githubusercontent.com/greywen/sse/refs/heads/main/videos/dome01.avif)
 
 后端代码:
 
@@ -83,15 +83,34 @@ while (true) {
 }
 ```
 
-短短几十行代码模拟一个简单的 SEE 功能。
+短短几十行代码模拟一个简单的 SEE 功能。是不是非常简单？
 
 这个时候有小伙伴就问 SEE 输出到一半想结束怎么办？SEE 报错了如何处理？SEE 如何输出图片？
 
 ## 进阶
 
-[展示视频]()
+[展示视频](https://raw.githubusercontent.com/greywen/sse/refs/heads/main/videos/dome02.avif)
 
-将 SSE 返回的数据结构需改为 JSON 格式, 加入了数据返回类型图片/想法/错误等
+[展示视频](https://raw.githubusercontent.com/greywen/sse/refs/heads/main/videos/dome03.avif)
+
+1. 将 SSE 返回的数据结构需改为 JSON 格式
+
+```json
+{ "t": "返回类型", "r": "返回内容" }
+```
+
+2. 前端使用 AbortController 来控制是否结束当前请求（但是在实战中可能需要使用其他方案）
+
+```typescript
+const response = await fetch('/api/sse', {
+  signal: abortController.signal,
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({ ...reqBody }),
+});
+```
 
 后端代码：
 

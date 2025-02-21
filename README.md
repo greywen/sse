@@ -6,9 +6,11 @@
 
 ## [SSE(server-sent events)](https://developer.mozilla.org/zh-CN/docs/Web/API/Server-sent_events/Using_server-sent_events)
 
-一句话概括 SSE: SSE（Server-Sent Events）是一种基于 HTTP 的轻量级协议，允许服务端通过长连接向客户端单向实时推送结构化文本数据流。
+一句话概括: SSE（Server-Sent Events）是一种基于 HTTP 的轻量级协议，允许服务端通过长连接向客户端单向实时推送结构化文本数据流。
 
 ## 浅入浅出
+
+[展示视频]()
 
 后端代码:
 
@@ -75,19 +77,78 @@ while (true) {
         setMessage((prev) => {
           return (prev += data);
         });
-        console.log(data);
       }
     }
   }
 }
 ```
 
-展示
-
-[展示视频]()
-
-短短几十行代码模拟一个简单的SEE功能。
+短短几十行代码模拟一个简单的 SEE 功能。
 
 这个时候有小伙伴就问 SEE 输出到一半想结束怎么办？SEE 报错了如何处理？SEE 如何输出图片？
 
+## 进阶
+
+[展示视频]()
+
+将 SSE 返回的数据结构需改为 JSON 格式, 加入了数据返回类型图片/想法/错误等
+
+后端代码：
+
+```typescript
+let cursor = 0;
+writeBySSE(res, { t: SSEResultType.Image, r: data.imageUrl });
+
+while (cursor < data.think.length) {
+  const randomLength = Math.floor(Math.random() * 10) + 1;
+  const chunk = data.think.slice(cursor, cursor + randomLength);
+  cursor += randomLength;
+  if (showSSEError && cursor > showErrorCount) {
+    writeBySSE(res, { t: SSEResultType.Error, r: '发生错误！' });
+    res.end();
+  }
+  writeBySSE(res, { t: SSEResultType.Think, r: chunk });
+
+  await sleep(50);
+}
+```
+
+前端代码：
+
+```typescript
+for (const line of lines) {
+  if (line.startsWith('data: ')) {
+    const l = line.slice(6);
+    const data: SseResponseLine = JSON.parse(l);
+    if (data.t === SSEResultType.Image) {
+      setMessage((prev) => {
+        return { ...prev, image: data.r };
+      });
+    } else if (data.t === SSEResultType.Think) {
+      setMessage((prev) => {
+        return { ...prev, think: (prev.think += data.r) };
+      });
+    } else if (data.t === SSEResultType.Text) {
+      setMessage((prev) => {
+        return { ...prev, content: (prev.content += data.r) };
+      });
+    } else if (data.t === SSEResultType.Cancelled) {
+      setMessage((prev) => {
+        return { ...prev, isCancelled: true };
+      });
+      setIsSending(false);
+    } else if (data.t === SSEResultType.End) {
+      setIsSending(false);
+    } else if (data.t === SSEResultType.Error) {
+      setMessage((prev) => {
+        return { ...prev, errorMsg: data.r };
+      });
+      setIsSending(false);
+    }
+  }
+}
+```
+
 ## 实战！
+
+[展示视频]()

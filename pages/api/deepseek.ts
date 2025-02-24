@@ -34,6 +34,7 @@ export default async function handler(
   );
 
   if (!response.ok) {
+    // 根据需求变化
     writeBySSE(res, { t: SSEResultType.Error, r: 'HTTP请求报错' });
     res.end();
   }

@@ -145,11 +145,15 @@ for (const line of lines) {
       });
     } else if (data.t === SSEResultType.Think) {
       setMessage((prev) => {
-        return { ...prev, think: (prev.think += data.r) };
+        const newThink = prev.think + data.r;
+        if (prev.think === newThink) return prev;
+        return { ...prev, think: newThink };
       });
     } else if (data.t === SSEResultType.Text) {
       setMessage((prev) => {
-        return { ...prev, content: (prev.content += data.r) };
+        const newContent = prev.content + data.r;
+        if (prev.content === newContent) return prev;
+        return { ...prev, content: newContent };
       });
     } else if (data.t === SSEResultType.Cancelled) {
       setMessage((prev) => {

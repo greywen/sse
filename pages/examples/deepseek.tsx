@@ -1,8 +1,9 @@
-import { ReqBody, SseResponseLine, SSEResultType } from '@/types/common';
+import { SseResponseLine, SSEResultType } from '@/types/common';
 import Link from 'next/link';
 import { useState } from 'react';
 
 type Message = {
+  messageId: string;
   content: string;
   image: string;
   think: string;
@@ -11,6 +12,7 @@ type Message = {
 };
 
 const initMsg: Message = {
+  messageId: 'e4aed4be-677c-4b3c-b8d1-ea4791b765c0',
   content: '',
   image: '',
   think: '',
@@ -18,34 +20,25 @@ const initMsg: Message = {
   isCancelled: false,
 };
 
-let abortController: AbortController | null = null;
-
 export default function Deepseek() {
-  const [message, setMessage] = useState<{
-    content: string;
-    image: string;
-    think: string;
-    errorMsg: string;
-    isCancelled: boolean;
-  }>(initMsg);
+  const [message, setMessage] = useState<Message>(initMsg);
   const [isSending, setIsSending] = useState(false);
-  const [reqBody, setReqBody] = useState<ReqBody>({
-    showHTTPError: false,
-    showSSEError: false,
-  });
+  const [userContent, setUserContent] = useState('');
 
   const send = async () => {
     try {
-      abortController = new AbortController();
       setMessage(initMsg);
+      setUserContent('');
       setIsSending(true);
       const response = await fetch('/api/deepseek', {
-        signal: abortController.signal,
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ ...reqBody }),
+        body: JSON.stringify({
+          messageId: message.messageId,
+          userContent: userContent,
+        }),
       });
       if (!response.ok) {
         throw 'HTTP请求报错';
@@ -82,11 +75,15 @@ export default function Deepseek() {
                 });
               } else if (data.t === SSEResultType.Think) {
                 setMessage((prev) => {
-                  return { ...prev, think: (prev.think += data.r) };
+                  const newThink = prev.think + data.r;
+                  if (prev.think === newThink) return prev;
+                  return { ...prev, think: newThink };
                 });
               } else if (data.t === SSEResultType.Text) {
                 setMessage((prev) => {
-                  return { ...prev, content: (prev.content += data.r) };
+                  const newContent = prev.content + data.r;
+                  if (prev.content === newContent) return prev;
+                  return { ...prev, content: newContent };
                 });
               } else if (data.t === SSEResultType.Cancelled) {
                 setMessage((prev) => {
@@ -107,11 +104,7 @@ export default function Deepseek() {
         }
       }
     } catch (error: any) {
-      if (error?.code === 20) {
-        setMessage((prev) => {
-          return { ...prev, isCancelled: true };
-        });
-      } else if (typeof error === 'string') {
+      if (typeof error === 'string') {
         setMessage((prev) => {
           return { ...prev, errorMsg: error };
         });
@@ -120,8 +113,14 @@ export default function Deepseek() {
     }
   };
 
-  const stop = () => {
-    abortController?.abort();
+  const stop = async () => {
+    await fetch('/api/stop', {
+      method: 'POST',
+      headers: new Headers({
+        'Content-Type': 'application/json',
+      }),
+      body: JSON.stringify({ messageId: message.messageId }),
+    });
   };
 
   return (
@@ -136,7 +135,9 @@ export default function Deepseek() {
           <>
             {
               <p className='text-gray-500 text-sm pb-2'>
-                {!message.content ? '思考中 ...' : '思考完成'}
+                {message.content || message.isCancelled
+                  ? '思考完成'
+                  : '思考中 ...'}
               </p>
             }
             <p className='text-gray-500 text-sm pb-2'>{message.think}</p>
@@ -150,6 +151,15 @@ export default function Deepseek() {
       </div>
       <div className='absolute left-1/2 bottom-2 -translate-x-1/2'>
         <div className='flex gap-6 items-center cursor-pointer select-none'>
+          <input
+            className='border p-2 rounded-md'
+            type='text'
+            placeholder='输出一条消息'
+            value={userContent}
+            onChange={(e) => {
+              setUserContent(e.target.value);
+            }}
+          ></input>
           {isSending ? (
             <button
               type='button'

@@ -21,13 +21,7 @@ const initMsg: Message = {
 let abortController: AbortController | null = null;
 
 export default function SSE() {
-  const [message, setMessage] = useState<{
-    content: string;
-    image: string;
-    think: string;
-    errorMsg: string;
-    isCancelled: boolean;
-  }>(initMsg);
+  const [message, setMessage] = useState<Message>(initMsg);
   const [isSending, setIsSending] = useState(false);
   const [reqBody, setReqBody] = useState<ReqBody>({
     showHTTPError: false,
@@ -146,7 +140,9 @@ export default function SSE() {
           <>
             {
               <p className='text-gray-500 text-sm pb-2'>
-                {!message.content ? '思考中 ...' : '思考完成'}
+                {message.content || message.isCancelled
+                  ? '思考完成'
+                  : '思考中 ...'}
               </p>
             }
             <p className='text-gray-500 text-sm pb-2'>{message.think}</p>
@@ -166,7 +162,11 @@ export default function SSE() {
               setReqBody({ ...reqBody, showSSEError: !reqBody.showSSEError });
             }}
           >
-            <input type='checkbox' checked={reqBody.showSSEError} />
+            <input
+              type='checkbox'
+              defaultChecked={false}
+              checked={reqBody.showSSEError}
+            />
             模拟SSE报错
           </p>
           <p
@@ -175,7 +175,11 @@ export default function SSE() {
               setReqBody({ ...reqBody, showHTTPError: !reqBody.showHTTPError });
             }}
           >
-            <input type='checkbox' checked={reqBody.showHTTPError} />
+            <input
+              type='checkbox'
+              defaultChecked={false}
+              checked={reqBody.showHTTPError}
+            />
             模拟HTTP请求报错
           </p>
           {isSending ? (
